@@ -478,9 +478,10 @@ impl<T, const CAP: usize> ArrayVec<T, CAP> {
             fn drop(&mut self) {
                 if self.deleted_cnt > 0 {
                     unsafe {
+                        let ptr = self.v.as_mut_ptr();
                         ptr::copy(
-                            self.v.as_ptr().add(self.processed_len),
-                            self.v.as_mut_ptr().add(self.processed_len - self.deleted_cnt),
+                            ptr.add(self.processed_len),
+                            ptr.add(self.processed_len - self.deleted_cnt),
                             self.original_len - self.processed_len
                         );
                     }
@@ -507,7 +508,9 @@ impl<T, const CAP: usize> ArrayVec<T, CAP> {
             }
             if DELETED {
                 unsafe {
-                    let hole_slot = g.v.as_mut_ptr().add(g.processed_len - g.deleted_cnt);
+                    let ptr = g.v.as_mut_ptr();
+                    let cur = ptr.add(g.processed_len);
+                    let hole_slot = ptr.add(g.processed_len - g.deleted_cnt);
                     ptr::copy_nonoverlapping(cur, hole_slot, 1);
                 }
             }
@@ -978,8 +981,9 @@ impl<'a, T: 'a, const CAP: usize> Drop for Drain<'a, T, CAP> {
                 // memmove back untouched tail, update to new length
                 let start = source_vec.len();
                 let tail = self.tail_start;
-                let src = source_vec.as_ptr().add(tail);
-                let dst = source_vec.as_mut_ptr().add(start);
+                let ptr = source_vec.as_mut_ptr();
+                let src = ptr.add(tail);
+                let dst = ptr.add(start);
                 ptr::copy(src, dst, self.tail_len);
                 source_vec.set_len(start + self.tail_len);
             }
